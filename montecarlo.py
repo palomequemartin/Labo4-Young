@@ -32,7 +32,7 @@ sigma_alpha = 0  # rad/s
 
 # GENERAR DATOS
 
-N = 1000000
+N = 10000000
 
 l = norm.rvs(loc=l, scale=sigma_l, size=N)
 L = norm.rvs(loc=L, scale=sigma_L, size=N)
@@ -41,16 +41,50 @@ d = norm.rvs(loc=d, scale=sigma_d, size=N)
 f = norm.rvs(loc=f, scale=sigma_f, size=N)
 
 E_i = 64*M*l**4*(alpha**2 + 4*np.pi**2*f**2)/(np.pi*L*d**4*k_n**4) * 1e-9
+
+
+# CON INTERVALO DE CONFIANZA
+
+h_bins, bins = np.histogram(E_i, density=True, bins='auto')
+w_bins = np.mean(np.diff(bins))
+P = w_bins*h_bins
+
+P_i = 0
+i = 0
+while P_i < 0.16:
+    P_i += P[i]
+    i += 1
+
+bin_inf = bins[i-1]
+
+
+P_i = 0
+i = 0
+while P_i < 0.16:
+    P_i += P[::-1][i]
+    i += 1
+
+bin_sup = bins[::-1][i-1]
+
+
+E = (bin_sup + bin_inf) / 2
+sigma_E = (bin_sup - bin_inf) / 2
+
+print(f'Intervalo de confianza: E = ({E:.3f} ± {sigma_E:.3f}) GPa')
+
+
+# CON ESTIMADORES (le confio menos)
+
 E = np.mean(E_i)
 sigma_E = np.sqrt(np.sum((E - E_i)**2) / (N**2 - N))
 
-print(E, sigma_E)
+print(f'Estimadores: E = ({E:.3f} ± {sigma_E:.3f}) GPa')
 
 
 # GRAFICAR
 
 fig, ax = plt.subplots()
 
-ax.hist(E_i, density=True)
+ax.hist(E_i, density=True, bins='auto')
 
 plt.show()
